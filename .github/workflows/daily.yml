@@ -1,0 +1,35 @@
+name: daily-digest
+
+on:
+  schedule:
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Send if it is 10:00 in Riga
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          TIMEZONE: Europe/Riga
+          SEND_HOUR: "10"
+          SEND_MINUTE: "0"
+        run: |
+          python - << 'PY'
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          import os
+          now = datetime.now(ZoneInfo(os.environ["TIMEZONE"]))
+          if now.hour != int(os.environ["SEND_HOUR"]):
+              print(f"skip, Riga time is {now:%H:%M}")
+              raise SystemExit(0)
+          import bot
+          bot.send_once()
+          PY
